@@ -3,6 +3,10 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\StoredData;
 use Illuminate\Support\Facades\Auth;
+use App\Mail\WarningStateMail;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
+
 
 class MyController extends Controller
 {
@@ -15,7 +19,6 @@ class MyController extends Controller
         $dataInput = StoredData::create([
             'temperature' => $request->temperature,
             'vibration' => $request->vibration,
-            // 'user_fk_id' => Auth::guard('user')->user()->id,
         ]);
 
         return response()->json([
@@ -45,4 +48,24 @@ class MyController extends Controller
 
         return response()->json($formattedData);
     }
+
+    public function sendEmail(Request $request)
+    {
+        Log::info('Received request to send email for state: ' . $request->state);
+        
+        $email = Auth::guard('user')->user()->email;
+        if ($email) {
+
+            Mail::to($email)->send(new WarningStateMail([
+                'state' => $request->state
+            ]));
+
+            Log::info('Warning email sent to: ' . $email);
+            return response()->json(['message' => 'Email sent successfully.']);
+        }
+
+        return response()->json(['message' => 'No email sent.'], 400);
+    }
+
+
 }

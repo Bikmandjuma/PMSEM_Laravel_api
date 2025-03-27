@@ -32,3 +32,5 @@ Route::group(['prefix'=>'adminauth' , 'middleware'=>'Admin'],function(){
 
 Route::get('/getting-Data',[MyController::class,'getData']);
 Route::post('/posting-Data',[MyController::class,'postData']);
+
+Route::post('/send-warning-email', [MyController::class, 'sendEmail']);
