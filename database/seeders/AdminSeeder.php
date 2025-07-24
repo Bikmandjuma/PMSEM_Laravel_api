@@ -20,7 +20,7 @@ class AdminSeeder extends Seeder
             'email' => 'admin@gmail.com',
             'image' => 'user.png',
             'dob' => '2000-12-20',
-            'password' => bcrypt('bugarama123@'),
+            'password' => bcrypt('password'),
         ]);
     }
 }
