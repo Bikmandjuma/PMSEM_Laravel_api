@@ -15,6 +15,12 @@ Route::post('/code_to_reset_pswd/{email}',[UserController::class,'code_to_reset_
 
 Route::post('/reset/password/{email}/{code}',[UserController::class,'resetPassword']);
 
+Route::post('/user/verify/code_to_register/{email}',[UserController::class,'verify_code_to_register']);
+
+Route::post('/user/initial_registration',[UserController::class,'register']);
+
+Route::post('/user/userfill_missed_info/{email}',[UserController::class,'fill_missed_info']);
+
 //User/Seeker routes
 Route::group(['prefix'=>'user' , 'middleware'=>'User'],function(){
     Route::get('/dashboard', [UserController::class, 'dashboard']);

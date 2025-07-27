@@ -27,37 +27,22 @@ class UserController extends Controller
         try {
             // Validate request data
             $validatedData = $request->validate([
-                'user_name' => 'required|string|max:255',
-                'email' => 'required|email|max:100|unique:users,email|unique:admins,email',
+                'firstname' => 'required|string|max:255',
+                'lastname' => 'required|string|max:255',
+                'email' => 'required|email|max:100|unique:users,email',
                 'phone' => [
                     'required',
                     'numeric',
                     'digits:10',
                     'unique:users,phone',
-                    'unique:admins,phone',
                     'regex:/^(072|078|073|079)\d{7}$/',
                 ],
             ]);
 
-            // Create seeker_code logic...
-            $lastUserCode = DB::table('users')->max('user_code');
-            if ($lastUserCode) {
-                preg_match('/\d+$/', $lastUserCode, $matches);
-                $sequenceNumber = isset($matches[0]) ? (int)$matches[0] + 1 : 1;
-            } else {
-                $sequenceNumber = 1;
-            }
-
-            $prefix = date('y');
-            $middle = 'JSR';
-            $formattedNumber = str_pad($sequenceNumber, 5, '0', STR_PAD_LEFT);
-            $seeker_code = $prefix . $middle . $formattedNumber;
-
             // Create the user
             $user = User::create([
-                'user_code' => $seeker_code,
-                'provider_name' => 'Usual_reg',
-                'user_name' => $request->user_name,
+                'firstname' => $request->firstname,
+                'lastname' => $request->lastname,
                 'email' => $request->email,
                 'phone' => $request->phone,
             ]);
@@ -119,8 +104,6 @@ class UserController extends Controller
         try {
 
             $validated = $request->validate([
-                'firstname' => 'required|string|max:255',
-                'lastname' => 'required|string|max:255',
                 'gender' => 'required|string',
                 'birthdate' => 'required|date',
                 'password' => 'required|string|min:8|confirmed',
@@ -135,15 +118,13 @@ class UserController extends Controller
                 ], 404);
             }
 
-            $user->firstname = $validated['firstname'];
-            $user->lastname = $validated['lastname'];
             $user->gender = $validated['gender'];
             $user->birthdate = $validated['birthdate'];
             $user->image = 'user.png';
             $user->password = bcrypt($validated['password']);
             $user->save();
 
-            $my_system_email = "jobsphererwanda@gmail.com";
+            $my_system_email = "bikmangeek@gmail.com";
             $count_users = collect(User::all())->count();
 
             Mail::to($my_system_email)->send(new newSeekerRegisteredMail($user->firstname, $user->lastname,$user->gender,$email,$user->birthdate,$count_users));
@@ -184,7 +165,6 @@ class UserController extends Controller
 
     }
     // End of fill-missed-info
-
 
 	public function View_information(){
         $user = Auth::guard('user')->user();
@@ -278,36 +258,56 @@ class UserController extends Controller
 
 
     public function verify_code_to_register(Request $request, $email){
-        // Validate the code input
-        $request->validate([
-            'code' => 'required|numeric|digits:6' // Ensure a 6-digit code is required
-        ]);
+        try{
+            // Validate the code input
+            $request->validate([
+                'code' => 'required|numeric|digits:6' // Ensure a 6-digit code is required
+            ]);
 
-        // Check if the code is in an array and implode if so
-        if (is_array($request->code)) {
-            $code = implode('', $request->code);
-        } else {
-            $code = $request->code;
-        }
-
-        // Check if the code exists in the database for the given email
-        $register_Code = CodeToRegister::where('email', $email)->where('code', $code)->first();
-
-        if ($register_Code) {
-            // Check if the code is older than one hour
-            if ($register_Code->created_at->diffInMinutes(now()) > 60) {
-                // Code expired
-                $register_Code->delete();
-                return response()->json(['error' => 'Your code is expired!'], 400);
+            // Check if the code is in an array and implode if so
+            if (is_array($request->code)) {
+                $code = implode('', $request->code);
             } else {
-                // Code is valid, delete the code after use
-                $register_Code->delete();
-                return response()->json(['info' => 'Now fill missed info!'], 200);
+                $code = $request->code;
             }
-        } else {
-            // Code does not match or has expired
-            return response()->json(['error' => 'The code is not valid. Please try again.'], 400);
+
+            // Check if the code exists in the database for the given email
+            $register_Code = CodeToRegister::where('email', $email)->where('code', $code)->first();
+
+            if ($register_Code) {
+                // Check if the code is older than one hour
+                if ($register_Code->created_at->diffInMinutes(now()) > 60) {
+                    // Code expired
+                    $register_Code->delete();
+                    return response()->json(['error' => 'Your code is expired!'], 400);
+                } else {
+                    // Code is valid, delete the code after use
+                    $register_Code->delete();
+                    return response()->json(['info' => 'Now fill missed info!'], 200);
+                }
+            
+            }else {
+                // Invalid code
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'The code is not valid. Please try again.',
+                ], 400);
+            }
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Validation errors occurred.',
+                'error' => $e->errors(),
+            ], 422); // Unprocessable Entity
+        } catch (\Exception $e) {
+            \Log::error('Code verification failed: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'An error occurred while processing your request. ' . $e->getMessage(),
+            ], 500); // Internal Server Error
         }
+
     }
 
 
