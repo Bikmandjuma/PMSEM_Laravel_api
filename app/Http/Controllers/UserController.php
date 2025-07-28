@@ -182,27 +182,69 @@ class UserController extends Controller
         return response()->json(['error' => 'Unauthorized'], 401);
     }
 
+    // public function fetch_stored_data()
+    // {
+    //     try {
+    //         $data = StoredData::all()->map(function ($item) {
+    //             $temperature = $item->temperature;
+    //             $vibration = $item->vibration;
+
+    //             // Determine status - only three statuses, no fallback
+    //             if ($temperature <= 75 && $vibration >= 0.5 && $vibration <= 2.0) {
+    //                 $status = 'Healthy';
+    //             } elseif (($temperature >= 76 && $temperature <= 100) && ($vibration > 2.0 && $vibration <= 4.5)) {
+    //                 $status = 'Warning';
+    //             } elseif ($temperature > 100 || $vibration > 4.5) {
+    //                 $status = 'Failing';
+    //             } else {
+    //                 $status = 'Healthy'; 
+    //             }
+
+    //             $item->status = $status;
+    //             return $item;
+    //         });
+
+    //         return response()->json([
+    //             'status' => 'success',
+    //             'stored_data' => $data
+    //         ]);
+    //     } catch (\Illuminate\Validation\ValidationException $e) {
+    //         return response()->json([
+    //             'status' => 'error',
+    //             'message' => 'Validation errors occurred.',
+    //             'error' => $e->errors(),
+    //         ], 422);
+    //     } catch (\Exception $e) {
+    //         \Log::error('Fetching stored data failed: ' . $e->getMessage());
+    //         return response()->json([
+    //             'status' => 'error',
+    //             'message' => 'An error occurred while processing your request. ' . $e->getMessage(),
+    //         ], 500);
+    //     }
+    // }
+
     public function fetch_stored_data()
     {
         try {
-            $data = StoredData::all()->map(function ($item) {
+            $data = StoredData::all()->filter(function ($item) {
                 $temperature = $item->temperature;
                 $vibration = $item->vibration;
 
-                // Determine status - only three statuses, no fallback
+                // Check for only known statuses and skip unknown ones
                 if ($temperature <= 75 && $vibration >= 0.5 && $vibration <= 2.0) {
-                    $status = 'Healthy';
+                    $item->status = 'Healthy';
+                    return true;
                 } elseif (($temperature >= 76 && $temperature <= 100) && ($vibration > 2.0 && $vibration <= 4.5)) {
-                    $status = 'Warning';
+                    $item->status = 'Warning';
+                    return true;
                 } elseif ($temperature > 100 || $vibration > 4.5) {
-                    $status = 'Failing';
-                } else {
-                    $status = 'Healthy'; 
+                    $item->status = 'Failing';
+                    return true;
                 }
 
-                $item->status = $status;
-                return $item;
-            });
+                // Skip this record if none of the conditions match
+                return false;
+            })->values(); // Reset indexes
 
             return response()->json([
                 'status' => 'success',
@@ -222,6 +264,7 @@ class UserController extends Controller
             ], 500);
         }
     }
+
 
     public function edit_info(Request $request){
 
