@@ -196,8 +196,6 @@ class UserController extends Controller
                     $status = 'Warning';
                 } elseif ($temperature > 100 || $vibration > 4.5) {
                     $status = 'Failing';
-                } else {
-                    $status = 'Unknown'; // fallback
                 }
 
                 $item->status = $status;
