@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\DB;
 use App\Models\User;
+use App\Models\StoredData;
 use App\Models\Admin;
 use App\Models\CodeToRegister;
 use App\Models\JobCategory;
@@ -179,6 +180,47 @@ class UserController extends Controller
         }
 
         return response()->json(['error' => 'Unauthorized'], 401);
+    }
+
+    public function fetch_stored_data()
+    {
+        try {
+            $data = StoredData::all()->map(function ($item) {
+                $temperature = $item->temperature;
+                $vibration = $item->vibration;
+
+                // Determine status
+                if ($temperature <= 75 && $vibration >= 0.5 && $vibration <= 2.0) {
+                    $status = 'Healthy';
+                } elseif (($temperature >= 76 && $temperature <= 100) && ($vibration > 2.0 && $vibration <= 4.5)) {
+                    $status = 'Warning';
+                } elseif ($temperature > 100 || $vibration > 4.5) {
+                    $status = 'Failing';
+                } else {
+                    $status = 'Unknown'; // fallback
+                }
+
+                $item->status = $status;
+                return $item;
+            });
+
+            return response()->json([
+                'status' => 'success',
+                'stored_data' => $data
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Validation errors occurred.',
+                'error' => $e->errors(),
+            ], 422);
+        } catch (\Exception $e) {
+            \Log::error('Fetching stored data failed: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'An error occurred while processing your request. ' . $e->getMessage(),
+            ], 500);
+        }
     }
 
 

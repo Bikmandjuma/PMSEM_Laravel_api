@@ -19,6 +19,8 @@ Route::post('/user/verify/code_to_register/{email}',[UserController::class,'veri
 
 Route::post('/user/initial_registration',[UserController::class,'register']);
 
+Route::get('/user/fetch_stored_data',[UserController::class,'fetch_stored_data']);
+
 Route::post('/user/userfill_missed_info/{email}',[UserController::class,'fill_missed_info']);
 
 //User/Seeker routes
@@ -27,6 +29,7 @@ Route::group(['prefix'=>'user' , 'middleware'=>'User'],function(){
     // Route::get('/profile', [UserController::class, 'profile_picture']);
     Route::get('/view_info', [UserController::class, 'View_information']);
     Route::post('/update_info', [UserController::class, 'edit_info']);
+    // Route::get('/fetch_stored_data',[UserController::class,'fetch_stored_data']);
     Route::post('/modify_password', [UserController::class, 'modify_password']);
     // Route::post('/uploadImage',[UserController::class,'uploadImage']);
 });
