@@ -189,13 +189,15 @@ class UserController extends Controller
                 $temperature = $item->temperature;
                 $vibration = $item->vibration;
 
-                // Determine status
+                // Determine status - only three statuses, no fallback
                 if ($temperature <= 75 && $vibration >= 0.5 && $vibration <= 2.0) {
                     $status = 'Healthy';
                 } elseif (($temperature >= 76 && $temperature <= 100) && ($vibration > 2.0 && $vibration <= 4.5)) {
                     $status = 'Warning';
                 } elseif ($temperature > 100 || $vibration > 4.5) {
                     $status = 'Failing';
+                } else {
+                    $status = 'Healthy'; 
                 }
 
                 $item->status = $status;
@@ -220,7 +222,6 @@ class UserController extends Controller
             ], 500);
         }
     }
-
 
     public function edit_info(Request $request){
 
